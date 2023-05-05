@@ -128,8 +128,8 @@ jobs:
             npm audit --audit-level=critical
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
-          event: fail
-          template: basic_fail_1
+          event: pass
+          template: success_tagged_deploy_1
           
   scan-backend:
     docker:
@@ -147,8 +147,6 @@ jobs:
           command: |
             cd backend
             npm install
-            npm audit fix --audit-level=critical --force
-            npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL
@@ -332,12 +330,10 @@ workflows:
           requires: [build-backend]
       - scan-backend:
           requires: [build-backend]
-          context: 
-            - slack
+          context: slack-secret
       - scan-frontend:
           requires: [build-frontend]
-          context: 
-            - slack
+          context: slack-secret
       # - deploy-infrastructure:
       #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       #     filters:
