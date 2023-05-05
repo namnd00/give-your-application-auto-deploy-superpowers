@@ -128,7 +128,7 @@ jobs:
             npm audit --audit-level=critical
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL 
-          event: fail 
+          event: always 
           ignore_errors: true 
           template: basic_fail_1 
           
@@ -151,7 +151,7 @@ jobs:
             npm audit --audit-level=critical
       - slack/notify:
           channel: $SLACK_DEFAULT_CHANNEL 
-          event: fail 
+          event: always 
           ignore_errors: true 
           template: basic_fail_1 
 
@@ -332,8 +332,10 @@ workflows:
           requires: [build-backend]
       - scan-backend:
           requires: [build-backend]
+          context: slack-secret
       - scan-frontend:
           requires: [build-frontend]
+          context: slack-secret
       # - deploy-infrastructure:
       #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
       #     filters:
