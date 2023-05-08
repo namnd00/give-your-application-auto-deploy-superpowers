@@ -379,7 +379,7 @@ jobs:
           name: Backend smoke test.
           command: |
             export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-            export API_URL="http://${BACKEND_PUBLIC_IP}:9100"
+            export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
             echo "${API_URL}"  #   curl -s ${API_URL}/api/status -v 
             if curl -s ${API_URL}/api/status | grep "ok"
             then
