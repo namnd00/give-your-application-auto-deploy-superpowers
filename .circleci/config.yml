@@ -249,7 +249,7 @@ jobs:
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
-        - image: cimg/node:16.13.1
+        - image: circleci/node:13.8.0
     steps:
       # Checkout code from git
       - checkout
@@ -294,9 +294,9 @@ jobs:
           command: |
             # your code here
             export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-            export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
+            export API_URL="http://${BACKEND_PUBLIC_IP}:9100"
             echo "${API_URL}"
-            echo API_URL="http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
+            echo API_URL="http://${BACKEND_PUBLIC_IP}:9100" >> frontend/.env
             cat frontend/.env
       
       - persist_to_workspace:
@@ -366,7 +366,7 @@ jobs:
 
   smoke-test:
     docker:
-      - image: cimg/node:16.13.1
+      - image: circleci/node:13.8.0
     steps:
       - run:
           name: Install AWS CLI 
@@ -379,7 +379,7 @@ jobs:
           name: Backend smoke test.
           command: |
             export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-            export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
+            export API_URL="http://${BACKEND_PUBLIC_IP}:9100"
             echo "${API_URL}"  #   curl -s ${API_URL}/api/status -v 
             if curl -s ${API_URL}/api/status | grep "ok"
             then
