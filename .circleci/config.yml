@@ -279,45 +279,34 @@ jobs:
 
   deploy-frontend:
     docker:
-      # Docker image here that supports AWS CLI
       - image: cimg/node:16.13.1
     steps:
-      # Checkout code from git
       - checkout
       - aws-cli/setup
-
       - run:
           name: Install dependencies
           command: |
-            yum install -y tar gzip curl
-            curl -sL https://rpm.nodesource.com/setup_10.x | bash -
-            yum install -y nodejs    
-                    
+            sudo apt install -y gzip tar
+      - attach_workspace:
+          at: ~/
       - run:
           name: Get backend url
           command: |
-            # your code here
-            export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-            export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
-            echo "${API_URL}"
-            echo API_URL="http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
+            export BACKEND_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            echo NODE_ENV=production >> frontend/.env
+            echo ENVIRONMENT=production >> frontend/.env
             cat frontend/.env
-      
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - project/frontend/.env
-      
       - run:
           name: Deploy frontend objects
           command: |
-            # your code here
             cd frontend
             npm install
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      # Here's where you will add some code to rollback on failure      
       - revert-migrations
       # - destroy-environment
 
@@ -405,8 +394,8 @@ jobs:
               exit 1
             fi
 
-      - destroy-environment  
       - revert-migrations 
+      - destroy-environment  
 
   cloudfront-update:
     docker:
