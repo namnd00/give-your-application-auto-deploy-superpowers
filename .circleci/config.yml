@@ -202,24 +202,47 @@ jobs:
       # Here's where you will add some code to rollback on failure 
       - destroy-environment   
 
-#   configure-infrastructure:
-#     docker:
-#       # Docker image here that supports Ansible
-#     steps:
-#       # Checkout code from git
-#       # Add ssh keys with fingerprint
-#       # attach workspace
-#       - run:
-#           name: Install dependencies
-#           command: |
-#             # Your code here
-#             exit 1
-#       - run:
-#           name: Configure server
-#           command: |
-#             # Your code here
-#             exit 1
-#       # Here's where you will add some code to rollback on failure      
+configure-infrastructure:
+    docker:
+      # Docker image here that supports Ansible
+      - image: python:3.7-alpine3.11
+#      - image: python:3.8-alpine3.15      
+    steps:
+      # Checkout code from git
+      - checkout       
+      # Add ssh keys with fingerprint
+      - add_ssh_keys:
+          fingerprints: ["fb:f5:03:60:10:0e:1b:f1:37:39:9e:7d:57:19:5a:de"]
+      # attach workspace
+      - attach_workspace:
+          at: ~/
+
+      - run:
+          name: Install dependencies
+          command: |
+              apk add --update tar gzip ansible
+              pip install awscli
+
+      - run:
+          name: Configure server
+          command: |
+            cat ./.circleci/ansible/inventory.txt
+            export ANSIBLE_HOST_KEY_CHECKING=False
+            export RECORD_HOST_KEYS=False
+            export ANSIBLE_PARAMIKO_BANNER_TIMEOUT=30   
+            echo ENVIROMENT=production > "backend/.env"      
+            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
+            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"          
+            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"      
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"            
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"      
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"     
+            echo "CONTENT OF backend/.env"      
+            cat backend/.env
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt configure-server.yml -v 
+      - destroy-environment   
 
 #   run-migrations:
 #     docker:
@@ -354,8 +377,8 @@ workflows:
           filters:
             branches:
               only: [main]
-      # - configure-infrastructure:
-      #     requires: [deploy-infrastructure]
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
       # - run-migrations:
       #     requires: [configure-infrastructure]
       # - deploy-frontend:
