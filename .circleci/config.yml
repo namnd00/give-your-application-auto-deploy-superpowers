@@ -294,9 +294,9 @@ jobs:
           command: |
             # your code here
             export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-            export API_URL="http://${BACKEND_PUBLIC_IP}:9100"
+            export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
             echo "${API_URL}"
-            echo API_URL="http://${BACKEND_PUBLIC_IP}:9100" >> frontend/.env
+            echo API_URL="http://${BACKEND_PUBLIC_IP}:3030" >> frontend/.env
             cat frontend/.env
       
       - persist_to_workspace:
@@ -412,7 +412,7 @@ jobs:
       - run:
           name: Save Old Workflow ID to kvdb.io
           command: |
-            export OldWorkflowID=$(aws --region us-west-2 cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
+            export OldWorkflowID=$(aws --region us-east-1 cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
             echo "Old Wokflow ID: $OldWorkflowID"
             curl https://kvdb.io/${KVDB_BUCKET_ID}/old_workflow_id -d "${OldWorkflowID}"
       - run:
@@ -422,7 +422,7 @@ jobs:
                     --template-file .circleci/files/cloudfront.yml \
                     --stack-name InitialStack \
                     --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
-                    --region us-west-2 \
+                    --region us-east-1 \
                     --tags project=udapeople
             
       - revert-migrations
