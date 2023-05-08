@@ -249,10 +249,13 @@ jobs:
   run-migrations:
     docker:
       # Docker image here that supports NodeJS
-        - image: circleci/node:13.8.0
+        - image: cimg/node:16.13.1
     steps:
       # Checkout code from git
       - checkout
+      - restore_cache:
+          keys: [backend-build]
+      - aws-cli/setup
       - run:
           name: Run migrations
           command: |
@@ -277,10 +280,11 @@ jobs:
   deploy-frontend:
     docker:
       # Docker image here that supports AWS CLI
-      - image: amazon/aws-cli
+      - image: cimg/node:16.13.1
     steps:
       # Checkout code from git
       - checkout
+      - aws-cli/setup
 
       - run:
           name: Install dependencies
