@@ -197,7 +197,7 @@ jobs:
           command: |
             BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
+              --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
             echo $BACKEND_PUBLIC_IP >> ~/project/.circleci/ansible/inventory.txt
             cat ~/project/.circleci/ansible/inventory.txt
 
@@ -293,7 +293,7 @@ jobs:
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
+              --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
@@ -373,7 +373,7 @@ jobs:
           command: |
             export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances \
               --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
+              --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
             export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
             echo "${API_URL}"  #   curl -s ${API_URL}/api/status -v 
             if curl -s ${API_URL}/api/status | grep "ok"
