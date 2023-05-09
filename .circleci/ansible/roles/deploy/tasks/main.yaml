@@ -18,14 +18,3 @@
     npm install
     pm2 stop all
     pm2 start npm --name "udapeople-backend" -- run start
-
-- name: "Set pm2 start as a service"
-  become: true
-  shell: |
-    env PATH=$PATH:/usr/local/bin pm2 startup -u ubuntu
-
-- name: "Check pm2 status"
-  become: true
-  shell: |
-    pm2 describe "udapeople-backend"
-  
