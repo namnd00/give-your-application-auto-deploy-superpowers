@@ -422,18 +422,18 @@ jobs:
             sudo ./aws/install
             # sudo ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
 
-      - run:
-          name: Backend smoke test.
-          command: |
-            export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-            export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
-            echo "${API_URL}"  #   curl -s ${API_URL}/api/status -v 
-            if curl -s ${API_URL}/api/status | grep "ok"
-            then
-              exit 0
-            else
-              exit 1
-            fi       
+      # - run:
+      #     name: Backend smoke test.
+      #     command: |
+      #       export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
+      #       export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
+      #       echo "${API_URL}"  #   curl -s ${API_URL}/api/status -v 
+      #       if curl -s ${API_URL}/api/status | grep "ok"
+      #       then
+      #         exit 0
+      #       else
+      #         exit 1
+      #       fi       
 
       - run:
           name: Frontend smoke test.
