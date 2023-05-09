@@ -1,8 +1,16 @@
-- name: extract artifact
+---
+
+- name: "Copy file to the server"
+  become: true
+  copy:
+    src: artifact.tar.gz
+    dest: /home/ubuntu
+
+- name: "Unzip copied file"
   become: true
   unarchive:
-    src: files/artifact.tar.gz
-    dest: .
+    src: artifact.tar.gz
+    dest: /home/ubuntu
 
 - name: "Install npm"
   become: true

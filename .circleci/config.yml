@@ -362,10 +362,11 @@ jobs:
   deploy-backend:
     docker:
       # Docker image here that supports Ansible
-      - image: cimg/python:3.7-node
+      - image: python:3.7-alpine3.11
     steps:
       # Checkout code from git
-      - checkout       
+      - checkout
+      - aws-cli/setup
       # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints: ["fb:f5:03:60:10:0e:1b:f1:37:39:9e:7d:57:19:5a:de"]
@@ -374,55 +375,54 @@ jobs:
           at: ~/
 
       - run:
-          name: Install aws dependencies
+          name: Install dependencies
           command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-      - run:
-          name: Install Ansible
-          command: |
-            sudo apt update
-            sudo apt install software-properties-common -y
-            sudo add-apt-repository --yes --update ppa:ansible/ansible
-            sudo apt install ansible -y
-#              pip install --upgrade
+            # your code here
+            apk add --update ansible
+            apk add --update nodejs
+            apk add --update npm
       - run:
           name: Deploy backend
           command: |
             # your code here
-            cd backend # echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
+            echo NODE_ENV=production >> ~/project/backend/.env
+            echo "TYPEORM_CONNECTION = ${TYPEORM_CONNECTION}" >> ~/project/backend/.env
+            echo "TYPEORM_ENTITIES = ${TYPEORM_ENTITIES}" >> ~/project/backend/.env
+            echo "TYPEORM_HOST = ${TYPEORM_HOST}" >> ~/project/backend/.env
+            echo "TYPEORM_PORT = ${TYPEORM_PORT}" >> ~/project/backend/.env
+            echo "TYPEORM_USERNAME = ${TYPEORM_USERNAME}" >> ~/project/backend/.env
+            echo "TYPEORM_PASSWORD = ${TYPEORM_PASSWORD}" >> ~/project/backend/.env
+            echo "TYPEORM_DATABASE = ${TYPEORM_DATABASE}" >> ~/project/backend/.env
+            echo "TYPEORM_MIGRATIONS = ${TYPEORM_MIGRATIONS}" >> ~/project/backend/.env
+            echo "TYPEORM_MIGRATIONS_DIR = ${TYPEORM_MIGRATIONS_DIR}" >> ~/project/backend/.env
+            cd backend
             npm i
             npm run build
             cd ..
             # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
-            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
-            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
+            mkdir -p ./.circleci/ansible/roles/deploy/files
+            cp -r artifact.tar.gz ./.circleci/ansible/roles/deploy/files/
             cd .circleci/ansible
-            echo "Contents  of the inventory.txt file is -------"
+            echo "Content of inventory"
+            # aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> ~/project/.circleci/ansible/inventory.txt
             cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml -v
+            ansible-playbook -i inventory.txt deploy-backend.yml
       # Here's where you will add some code to rollback on failure  
       - revert-migrations
       - destroy-environment     
 
   smoke-test:
     docker:
-      - image: cimg/node:13.8.0
+      - image: cimg/node:16.13.1
     steps:
-      # - run:
-      #     name: Install dependencies
-      #     command: |
-      #       yum -y install jq tar gzip git curl
-      # - install_awscli
+      - checkout
+      - aws-cli/setup
       - run:
-          name: Install AWS CLI 
+          name: Install dependencies
           command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-            # sudo ./aws/install -i /usr/local/aws-cli -b /usr/local/bin
+            # your code here
+            sudo apt install curl
 
       - run:
           name: Backend smoke test.
@@ -432,7 +432,7 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
             export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
-            echo "${API_URL}"  #   curl -s ${API_URL}/api/status -v 
+            echo "${API_URL}"
             if curl -s ${API_URL}/api/status | grep "ok"
             then
               exit 0
