@@ -314,7 +314,7 @@ jobs:
   deploy-backend:
     docker:
       # Docker image here that supports Ansible
-      - image: cimg/python:3.7-node
+      - image: python:3.7-alpine3.11
     steps:
       # Checkout code from git
       - checkout       
@@ -324,21 +324,13 @@ jobs:
       # attach workspace
       - attach_workspace:
           at: ~/
-
       - run:
-          name: Install aws dependencies
+          name: Install some dependencies
           command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-      - run:
-          name: Install Ansible
-          command: |
-            sudo apt update
-            sudo apt install software-properties-common -y
-            sudo add-apt-repository --yes --update ppa:ansible/ansible
-            sudo apt install ansible -y
-
+            # your code here
+            apk add --update ansible
+            apk add --update nodejs
+            apk add --update npm
       - run:
           name: Deploy backend
           command: |
@@ -358,10 +350,10 @@ jobs:
             cd ..
             # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
-            mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
-            mv artifact.tar.gz ~/project/.circleci/ansible/roles/deploy/files/artifact.tar.gz
-            cd ~/project/.circleci/ansible
-            echo "Contents  of the inventory.txt file is "
+            mkdir -p ./.circleci/ansible/roles/deploy/files
+            cp -r artifact.tar.gz ./.circleci/ansible/roles/deploy/files/
+            cd .circleci/ansible
+            echo "Content of inventory"
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml -v
       # Here's where you will add some code to rollback on failure  
