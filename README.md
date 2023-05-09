@@ -27,19 +27,19 @@ In this project, you will prove your mastery of the following learning objective
 For your submission, please submit the following:
 
 - A text file named `urls.txt` including:
-  1. Public Url to GitHub repository (not private) [URL01](./screenshots/)
+  1. Public Url to GitHub repository (not private) [URL01](https://github.com/namnd00/Give-Your-Application-Auto-Deploy-Superpowers)
   1. Public URL for your S3 Bucket (aka, your green candidate front-end) [URL02]
   1. Public URL for your CloudFront distribution (aka, your blue production front-end) [URL03]
   1. Public URLs to deployed application back-end in EC2 [URL04]
   1. Public URL to your Prometheus Server [URL05]
 - Your screenshots in JPG or PNG format, named using the screenshot number listed in the instructions. These screenshots should be included in your code repository in the root folder.
-  1. Job failed because of compile errors. [SCREENSHOT01]
-  1. Job failed because of unit tests. [SCREENSHOT02]
-  1. Job that failed because of vulnerable packages. [SCREENSHOT03]
-  1. An alert from one of your failed builds. [SCREENSHOT04]
-  1. Appropriate job failure for infrastructure creation. [SCREENSHOT05]
-  1. Appropriate job failure for the smoke test job. [SCREENSHOT06]
-  1. Successful rollback after a failed smoke test. [SCREENSHOT07]  
+  1. Job failed because of compile errors. ![SCREENSHOT01](./screenshots/SCREENSHOT01.png)
+  1. Job failed because of unit tests. ![SCREENSHOT02](./screenshots/SCREENSHOT02.png)
+  1. Job that failed because of vulnerable packages. ![SCREENSHOT03](./screenshots/SCREENSHOT03.png)
+  1. An alert from one of your failed builds. ![SCREENSHOT04](./screenshots/SCREENSHOT04.png)
+  1. Appropriate job failure for infrastructure creation. ![SCREENSHOT05](./screenshots/SCREENSHOT05.png)
+  1. Appropriate job failure for the smoke test job. ![SCREENSHOT06](./screenshots/SCREENSHOT06.png)
+  1. Successful rollback after a failed smoke test. ![SCREENSHOT07](./screenshots/SCREENSHOT07.png)
   1. Successful promotion job. [SCREENSHOT08]
   1. Successful cleanup job. [SCREENSHOT09]
   1. Only deploy on pushed to `master` branch. [SCREENSHOT10]
