@@ -403,7 +403,7 @@ jobs:
             fi
 
       - revert-migrations 
-      - destroy-environment  
+      # - destroy-environment  
 
   cloudfront-update:
     docker:
@@ -429,7 +429,7 @@ jobs:
                     --tags project=udapeople
             
       - revert-migrations
-      - destroy-environment 
+      # - destroy-environment 
 
 # cleanup:
 #     docker:
