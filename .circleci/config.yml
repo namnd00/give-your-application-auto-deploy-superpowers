@@ -94,6 +94,9 @@ jobs:
             cd frontend
             npm i
             npm run test
+      - save_cache:
+          paths: [frontend/node_modules]
+          key: frontend-test
                 
   test-backend:
     docker:
@@ -112,6 +115,9 @@ jobs:
             cd backend
             npm i
             npm run test
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-test
             
   scan-frontend:
     docker:
@@ -132,11 +138,9 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
-      # - slack/notify:
-      #     channel: $SLACK_DEFAULT_CHANNEL 
-      #     event: always 
-      #     ignore_errors: true 
-      #     template: basic_fail_1 
+      - save_cache:
+          paths: [frontend/node_modules]
+          key: frontend-scan
           
   scan-backend:
     docker:
@@ -157,11 +161,9 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
-      # - slack/notify:
-      #     channel: $SLACK_DEFAULT_CHANNEL 
-      #     event: always 
-      #     ignore_errors: true 
-      #     template: basic_fail_1 
+      - save_cache:
+          paths: [backend/node_modules]
+          key: backend-scan
 
   deploy-infrastructure:
     docker:
@@ -193,9 +195,11 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
-            echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
-            cat .circleci/ansible/inventory.txt
+            BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
+            echo $BACKEND_PUBLIC_IP >> ~/project/.circleci/ansible/inventory.txt
+            cat ~/project/.circleci/ansible/inventory.txt
 
       - persist_to_workspace:
           root: ~/
@@ -206,9 +210,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      # Docker image here that supports Ansible
       - image: python:3.7-alpine3.11
-#      - image: python:3.8-alpine3.15      
     steps:
       # Checkout code from git
       - checkout       
@@ -223,26 +225,12 @@ jobs:
           name: Install dependencies
           command: |
               apk add --update tar gzip ansible
-              pip install awscli
 
       - run:
           name: Configure server
           command: |
-            cat ./.circleci/ansible/inventory.txt
-            export ANSIBLE_HOST_KEY_CHECKING=False
-            export RECORD_HOST_KEYS=False
-            export ANSIBLE_PARAMIKO_BANNER_TIMEOUT=30   
-            echo ENVIROMENT=production > "backend/.env"      
-            echo TYPEORM_CONNECTION=postgres >> "backend/.env"
-            echo TYPEORM_MIGRATIONS_DIR=./src/migrations >> "backend/.env"
-            echo TYPEORM_ENTITIES=./src/modules/domain/**/*.entity.ts >> "backend/.env"          
-            echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"      
-            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"            
-            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"      
-            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"     
-            echo "CONTENT OF backend/.env"      
-            cat backend/.env
             cd .circleci/ansible
+            cat inventory.txt 
             ansible-playbook -i inventory.txt configure-server.yml -v 
       - destroy-environment   
 
@@ -259,8 +247,19 @@ jobs:
       - run:
           name: Run migrations
           command: |
-            cd backend
+            # add environment variables
+            echo "TYPEORM_CONNECTION = ${TYPEORM_CONNECTION}" >> ~/project/backend/.env
+            echo "TYPEORM_ENTITIES = ${TYPEORM_ENTITIES}" >> ~/project/backend/.env
+            echo "TYPEORM_HOST = ${TYPEORM_HOST}" >> ~/project/backend/.env
+            echo "TYPEORM_PORT = ${TYPEORM_PORT}" >> ~/project/backend/.env
+            echo "TYPEORM_USERNAME = ${TYPEORM_USERNAME}" >> ~/project/backend/.env
+            echo "TYPEORM_PASSWORD = ${TYPEORM_PASSWORD}" >> ~/project/backend/.env
+            echo "TYPEORM_DATABASE = ${TYPEORM_DATABASE}" >> ~/project/backend/.env
+            echo "TYPEORM_MIGRATIONS = ${TYPEORM_MIGRATIONS}" >> ~/project/backend/.env
+            echo "TYPEORM_MIGRATIONS_DIR = ${TYPEORM_MIGRATIONS_DIR}" >> ~/project/backend/.env
+            cd ~/project/backend
             npm install
+            npm run build
             npm run migrations:revert
             npm run migrations > migrations_dump.txt
             cat ./migrations_dump.txt
@@ -292,7 +291,9 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export BACKEND_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "API_URL = ${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
@@ -313,7 +314,7 @@ jobs:
   deploy-backend:
     docker:
       # Docker image here that supports Ansible
-      - image: cimg/python:3.7-node
+      - image: python:3.7-alpine3.11
     steps:
       # Checkout code from git
       - checkout       
@@ -325,32 +326,34 @@ jobs:
           at: ~/
 
       - run:
-          name: Install aws dependencies
+          name: Install some dependencies
           command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
-      - run:
-          name: Install Ansible
-          command: |
-            sudo apt update
-            sudo apt install software-properties-common -y
-            sudo add-apt-repository --yes --update ppa:ansible/ansible
-            sudo apt install ansible -y
+            apk add --update ansible
+            apk add --update nodejs
+            apk add --update npm
       - run:
           name: Deploy backend
           command: |
-            # your code here
-            cd backend # echo TYPEORM_HOST=$TYPEORM_HOST >> "backend/.env"
+            echo NODE_ENV=production >> ~/project/backend/.env
+            echo "TYPEORM_CONNECTION = ${TYPEORM_CONNECTION}" >> ~/project/backend/.env
+            echo "TYPEORM_ENTITIES = ${TYPEORM_ENTITIES}" >> ~/project/backend/.env
+            echo "TYPEORM_HOST = ${TYPEORM_HOST}" >> ~/project/backend/.env
+            echo "TYPEORM_PORT = ${TYPEORM_PORT}" >> ~/project/backend/.env
+            echo "TYPEORM_USERNAME = ${TYPEORM_USERNAME}" >> ~/project/backend/.env
+            echo "TYPEORM_PASSWORD = ${TYPEORM_PASSWORD}" >> ~/project/backend/.env
+            echo "TYPEORM_DATABASE = ${TYPEORM_DATABASE}" >> ~/project/backend/.env
+            echo "TYPEORM_MIGRATIONS = ${TYPEORM_MIGRATIONS}" >> ~/project/backend/.env
+            echo "TYPEORM_MIGRATIONS_DIR = ${TYPEORM_MIGRATIONS_DIR}" >> ~/project/backend/.env
+            cd backend
             npm i
             npm run build
             cd ..
             # Zip the directory
             tar -C backend -czvf artifact.tar.gz .
             mkdir -p ~/project/.circleci/ansible/roles/deploy/files/
-            mv artifact.tar.gz .circleci/ansible/roles/deploy/files/artifact.tar.gz
-            cd .circleci/ansible
-            echo "Contents  of the inventory.txt file is -------"
+            mv artifact.tar.gz ~/project/.circleci/ansible/roles/deploy/files/artifact.tar.gz
+            cd ~/project/.circleci/ansible
+            echo "Contents  of the inventory.txt file is "
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml -v
       # Here's where you will add some code to rollback on failure  
@@ -359,19 +362,24 @@ jobs:
 
   smoke-test:
     docker:
-      - image: circleci/node:13.8.0
+      - image: cimg/node:16.13.1
     steps:
+      - checkout
+      - aws-cli/setup
+      - attach_workspace: 
+          at: ~/
+      
       - run:
-          name: Install AWS CLI 
+          name: install curl
           command: |
-            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-            unzip awscliv2.zip
-            sudo ./aws/install
+            sudo apt install curl
 
       - run:
           name: Backend smoke test.
           command: |
-            export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
+            export BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
             export API_URL="http://${BACKEND_PUBLIC_IP}:3030"
             echo "${API_URL}"  #   curl -s ${API_URL}/api/status -v 
             if curl -s ${API_URL}/api/status | grep "ok"
@@ -399,13 +407,15 @@ jobs:
 
   cloudfront-update:
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/node:16.13.1
     steps:
       - checkout
+      - aws-cli/setup
       - run:
           name: Save Old Workflow ID to kvdb.io
           command: |
-            export OldWorkflowID=$(aws --region us-east-1 cloudformation list-exports --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
+            export OldWorkflowID=$(aws --region us-east-1 cloudformation list-exports \
+              --query "Exports[?Name==\`WorkflowID\`].Value" --no-paginate --output text)
             echo "Old Wokflow ID: $OldWorkflowID"
             curl https://kvdb.io/${KVDB_BUCKET_ID}/old_workflow_id -d "${OldWorkflowID}"
       - run:
