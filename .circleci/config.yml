@@ -14,9 +14,9 @@ commands:
           command: |
             # Your code goes here  
             echo "${CIRCLE_WORKFLOW_ID:0:7}"
-            aws s3 rm "s3://devops-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
-            aws cloudformation delete-stack --stack-name "devops-backend-${CIRCLE_WORKFLOW_ID:0:7}"
-            aws cloudformation delete-stack --stack-name "devops-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws s3 rm "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
+            aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
+            aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
     
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow
@@ -193,16 +193,16 @@ jobs:
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
-              --tags project=devopsAWSAnsiblePrometheus \
-              --stack-name "devops-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople \
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
       - run:
           name: Ensure front-end infrastructure exist
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
-              --tags project=devopsAWSAnsiblePrometheus \
-              --stack-name "devops-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
       - run:
           name: Add back-end ip to ansible inventory
@@ -339,7 +339,7 @@ jobs:
             npm install
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
-            aws s3 cp dist s3://devops-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - revert-migrations
       - destroy-environment
                     
@@ -426,7 +426,7 @@ jobs:
           name: Frontend smoke test.
           command: |
             # your code here
-            export URL="http://devops-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
+            export URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
             echo ${URL} 
             if curl -s ${URL} | grep "Welcome"
             then
@@ -457,8 +457,8 @@ jobs:
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --stack-name PromotionPhase \
-              --parameter-overrides WorkflowID="devops-${CIRCLE_WORKFLOW_ID:0:7}" \
-              --tags project=devopsAWSAnsiblePrometheus
+              --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --tags project=udapeople
       - persist_to_workspace:
           root: ~/
           paths:
@@ -491,8 +491,8 @@ jobs:
               then
                 echo 'cleanup infra...'
                 aws s3 rm "s3://${previousWorkflowID}" --recursive
-                aws cloudformation delete-stack --stack-name "devops-backend-${previousWorkflowID}"
-                aws cloudformation delete-stack --stack-name "devops-frontend-${previousWorkflowID}"
+                aws cloudformation delete-stack --stack-name "udapeople-backend-${previousWorkflowID}"
+                aws cloudformation delete-stack --stack-name "udapeople-frontend-${previousWorkflowID}"
               else
                 echo 'cannot cleanup infra'
               fi
