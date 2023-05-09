@@ -1,0 +1,23 @@
+---
+
+- name: "Copy file to the server"
+  become: true
+  copy:
+    src: artifact.tar.gz
+    dest: /home/ubuntu
+
+- name: "Unzip copied file"
+  become: true
+  unarchive:
+    src: artifact.tar.gz
+    dest: /home/ubuntu
+
+- name: "Install npm"
+  become: true
+  shell:
+    cmd: "npm install"
+
+- name: "Run pm2"
+  become: true
+  shell:
+    cmd: "pm2 stop default || pm2 start npm -- start"
