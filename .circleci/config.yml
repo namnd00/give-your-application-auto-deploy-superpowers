@@ -92,15 +92,11 @@ jobs:
 
   test-frontend:
     docker:
-      # Docker image here
       - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
       - checkout
-      # Restore from cache
       - restore_cache:
           keys: [frontend-build]
-      # Your job code here
       - run:
           name: Test front-end
           command: |
@@ -110,15 +106,11 @@ jobs:
 
   test-backend:
     docker:
-      # Docker image here
       - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
       - checkout
-      # Restore from cache
       - restore_cache:
           keys: [backend-build]
-      # Your job code here
       - run:
           name: Test back-end
           command: |
@@ -128,15 +120,11 @@ jobs:
 
   scan-frontend:
     docker:
-      # Docker image here
       - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
       - checkout
-      # Restore from cache
       - restore_cache:
           keys: [frontend-build]
-      # Your job code here
       - run:
           name: Scan front-end
           command: |
@@ -148,15 +136,11 @@ jobs:
           
   scan-backend:
     docker:
-      # Docker image here
       - image: circleci/node:13.8.0
     steps:
-      # Checkout code from git
       - checkout
-      # Restore from cache
       - restore_cache:
           keys: [backend-build]
-      # Your job code here
       - run:
           name: Scan back-end
           command: |
@@ -168,16 +152,9 @@ jobs:
 
   deploy-infrastructure:
     docker:
-      # Docker image here that supports AWS CLI
       - image: amazon/aws-cli
     steps:
-      # Checkout code from git
       - checkout
-      # - run: 
-      #     name: set/override default region 
-      #     command: | 
-      #         aws configure set default.region "us-east-1"
-      #         echo $(aws configure list)
       - run:
           name: Install tar and zip utilities
           command: |
@@ -209,21 +186,15 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      # Here's where you will add some code to rollback on failure 
       - destroy-environment     
 
   configure-infrastructure:
     docker:
-      # Docker image here that supports Ansible
       - image: python:3.7-alpine3.11
-#      - image: python:3.8-alpine3.15      
     steps:
-      # Checkout code from git
       - checkout       
-      # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints: ["fb:f5:03:60:10:0e:1b:f1:37:39:9e:7d:57:19:5a:de"]
-      # attach workspace
       - attach_workspace:
           at: ~/
 
@@ -232,12 +203,7 @@ jobs:
           command: |
               apk add --update tar gzip ansible
               pip install awscli
-#              pip install --upgrade pip
-#              pip install ansible
-#              pip install awscli
-#            apk update && apk add --no-cache musl-dev libffi-dev openssl-dev make gcc python py2-pip python-dev
-#            pip install --upgrade pip
-#            pip install cffi
+
       - run:
           name: Configure server
           command: |
@@ -261,10 +227,8 @@ jobs:
 
   run-migrations:
     docker:
-      # Docker image here that supports NodeJS
         - image: cimg/node:16.13.1
     steps:
-      # Checkout code from git
       - checkout
       - restore_cache:
           keys: [backend-build]
@@ -296,17 +260,13 @@ jobs:
                 curl https://kvdb.io/${KVDB_BUCKET_ID}/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
       - destroy-environment
-      - revert-migrations   
+      - revert-migrations
 
   deploy-frontend:
     docker:
-      # Docker image here that supports AWS CLI
       - image: amazon/aws-cli
     steps:
-      # Checkout code from git
       - checkout
-
-
       - run:
           name: Install dependencies
           command: |
@@ -342,25 +302,19 @@ jobs:
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
 
-      # Here's where you will add some code to rollback on failure      
       - revert-migrations
       - destroy-environment     
                     
   deploy-backend:
     docker:
-      # Docker image here that supports Ansible
       - image: python:3.7-alpine3.11
     steps:
-      # Checkout code from git
       - checkout
       - aws-cli/setup
-      # Add ssh keys with fingerprint
       - add_ssh_keys:
           fingerprints: ["fb:f5:03:60:10:0e:1b:f1:37:39:9e:7d:57:19:5a:de"]
-      # attach workspace
       - attach_workspace:
           at: ~/
-
       - run:
           name: Install dependencies
           command: |
@@ -395,7 +349,6 @@ jobs:
             # aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> ~/project/.circleci/ansible/inventory.txt
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-      # Here's where you will add some code to rollback on failure  
       - revert-migrations
       - destroy-environment     
 
