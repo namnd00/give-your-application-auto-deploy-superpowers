@@ -6,7 +6,9 @@ Parameters:
     Description: Unique identifier.
     Type: String
 
+
 Resources:
+  
   CloudFrontOriginAccessIdentity:
     Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
     Properties:
