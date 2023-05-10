@@ -445,9 +445,9 @@ jobs:
               aws --region us-east-1 s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws --region us-east-1 cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws --region us-east-1 cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
-              echo "=======================Delete Confirmed========================"
+              echo "Delete Confirmed"
             else
-              echo "=======================Didn't delete========================"            
+              echo "Didn't delete"            
             fi
             
 
