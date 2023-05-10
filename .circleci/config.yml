@@ -254,7 +254,7 @@ jobs:
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> "backend/.env"      
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> "backend/.env"     
             echo "CONTENT OF backend/.env"      
-            cat backend/.env         
+            cat backend/.env
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml -v 
       - destroy-environment
