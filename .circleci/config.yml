@@ -416,7 +416,7 @@ jobs:
                     --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
                     --region us-east-1 \
                     --tags project=udapeople
-            
+
       - revert-migrations
       - destroy-environment
 
