@@ -23,9 +23,9 @@
     global: yes
     production: yes
 
-- name: "install nodejs 13.8.0"
+- name: "install nodejs 12.20.1"
   become: true
-  shell: n 13.8.0
+  shell: n 12.20.1
 
 - name: "install pm2"
   become: true
