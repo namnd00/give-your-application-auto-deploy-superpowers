@@ -51,7 +51,7 @@ For your submission, please submit the following:
   
   ![SCREENSHOT11](./screenshots/SCREENSHOT11-node_memory_MemFree_bytes.png)
 
-  1. Provide a screenshot of an alert that was sent by Prometheus. [SCREENSHOT12]
+  1. Provide a screenshot of an alert that was sent by Prometheus. ![SCREENSHOT12](./screenshots/SCREENSHOT12.png)
 
 - Your presentation should be in PDF format named "presentation.pdf" and should be included in your code repository root folder. 
 
